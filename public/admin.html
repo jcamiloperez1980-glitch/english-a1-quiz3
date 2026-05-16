@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin · Quiz attempts</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { background: #f0f4fa; }
+    tr:hover { background: #fafcff; }
+    .bar { background: #e6ecf6; border-radius: 6px; height: 8px; overflow: hidden; }
+    .bar > div { height: 100%; background: var(--brand); }
+    .grid { display: grid; gap: 10px; }
+    .pill { font-size: .8rem; padding: 2px 8px; border-radius: 999px; background: #eef4fc; color: var(--brand); }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <h1>Quiz attempts</h1>
+      <p class="subtitle">English A1 · Unit 3 practice</p>
+    </header>
+
+    <section class="card">
+      <h2>Summary</h2>
+      <div id="summary">Loading…</div>
+    </section>
+
+    <section class="card">
+      <h2>Per-question performance</h2>
+      <div id="per-item" class="grid">Loading…</div>
+    </section>
+
+    <section class="card">
+      <h2>All attempts</h2>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr><th>When</th><th>Name</th><th>ID</th><th>Score</th><th>Time</th></tr>
+          </thead>
+          <tbody id="attempts-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script>
+    async function load() {
+      const [stats, attempts] = await Promise.all([
+        fetch("/api/admin/stats").then(r => r.json()),
+        fetch("/api/admin/attempts").then(r => r.json()),
+      ]);
+      document.getElementById("summary").innerHTML = `
+        <p><strong>${stats.totalAttempts}</strong> attempt(s) submitted.</p>
+        <p>Average score: <strong>${stats.averageScore}</strong> / 20</p>
+      `;
+      const per = document.getElementById("per-item");
+      per.innerHTML = stats.perItem.map((it, i) => {
+        const pct = it.attempts ? Math.round((it.correct / it.attempts) * 100) : 0;
+        return `
+          <div>
+            <div style="display:flex;justify-content:space-between;gap:8px;">
+              <span><strong>Q${i+1}</strong> <span class="pill">${it.skill}</span></span>
+              <span>${it.correct}/${it.attempts} correct · ${pct}%</span>
+            </div>
+            <div class="bar"><div style="width:${pct}%"></div></div>
+          </div>
+        `;
+      }).join("");
+      const body = document.getElementById("attempts-body");
+      body.innerHTML = attempts.map(a => `
+        <tr>
+          <td>${a.created_at}</td>
+          <td>${escapeHtml(a.student_name)}</td>
+          <td>${escapeHtml(a.student_id)}</td>
+          <td>${a.score} / ${a.total}</td>
+          <td>${a.duration_seconds ? a.duration_seconds + "s" : "—"}</td>
+        </tr>
+      `).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--muted);">No attempts yet.</td></tr>`;
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    }
+    load();
+  </script>
+</body>
+</html>

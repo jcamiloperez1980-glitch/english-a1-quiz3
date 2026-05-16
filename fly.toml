@@ -1,0 +1,24 @@
+# fly.toml — created by hand, edit the `app` name after `fly launch` if needed.
+app = "english-a1-quiz3"
+primary_region = "bog"   # Bogotá. Alternatives: "mia" (Miami), "gru" (São Paulo)
+
+[build]
+
+[env]
+  PORT = "3000"
+  DB_PATH = "/data/attempts.db"
+
+[[mounts]]
+  source = "quiz_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

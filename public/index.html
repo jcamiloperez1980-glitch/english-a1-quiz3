@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>English A1 — Unit 3 Practice Quiz</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <h1>English A1 — Unit 3</h1>
+      <p class="subtitle">Practice Quiz · 20 questions · ~20 minutes</p>
+    </header>
+
+    <section id="start-screen" class="card">
+      <h2>Before you begin</h2>
+      <ul class="tips">
+        <li>Read each situation carefully.</li>
+        <li>Choose the option that is <strong>most polite, clearest, and grammatically correct</strong>.</li>
+        <li>You will see feedback and explanations at the end.</li>
+      </ul>
+      <form id="start-form">
+        <label>Full name
+          <input type="text" id="student-name" required minlength="2" maxlength="120" autocomplete="name" />
+        </label>
+        <label>Student ID
+          <input type="text" id="student-id" required minlength="2" maxlength="60" />
+        </label>
+        <button type="submit" class="primary">Start the quiz</button>
+      </form>
+    </section>
+
+    <section id="quiz-screen" class="card hidden">
+      <div class="progress"><div id="progress-bar"></div></div>
+      <div id="progress-text" class="progress-text"></div>
+      <div id="question-container"></div>
+      <nav class="nav-row">
+        <button id="prev-btn" type="button">← Previous</button>
+        <button id="next-btn" type="button" class="primary">Next →</button>
+        <button id="submit-btn" type="button" class="primary hidden">Submit quiz</button>
+      </nav>
+    </section>
+
+    <section id="results-screen" class="card hidden">
+      <h2>Your results</h2>
+      <div id="score-summary"></div>
+      <div id="breakdown"></div>
+      <button id="retry-btn" type="button">Take it again</button>
+    </section>
+
+    <footer class="footer">
+      <small>UNIMINUTO · English A1 · Practice resource</small>
+    </footer>
+  </main>
+  <script src="quiz.js"></script>
+</body>
+</html>
