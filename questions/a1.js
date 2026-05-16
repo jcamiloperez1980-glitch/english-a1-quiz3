@@ -21,9 +21,9 @@ module.exports = [
     text: "You are in a store and see the following sign: \"Buy 2 shirts and get 1 free. Offer valid for items under $30 each.\" What is the correct interpretation of this offer?",
     options: [
       "You must buy two shirts under $30 each to get a third shirt for free.",
-      "The third shirt you choose must cost less than $30.",
-      "You can buy one shirt under $30 and get another for free.",
-      "You can get any shirt for free after buying two items."
+      "The third shirt you choose must cost less than $30 to qualify for the offer.",
+      "You can buy one shirt under $30 and get another shirt of any price for free.",
+      "You can get any free shirt after buying two items, regardless of their price tag."
     ],
     correct: 0,
     explanation: "The condition 'items under $30 each' applies to the qualifying purchase: both of the shirts you buy must be under $30. The free item is the result of meeting that condition."
@@ -60,12 +60,12 @@ module.exports = [
     text: "The waiter explains the specials:\n• Waiter: \"Our soup of the day is tomato basil, and our chef's special is grilled chicken with a side of mashed potatoes.\"\nWhich response is the most effective?",
     options: [
       "\"I'll try the chef's special, please. Could you tell me if it's spicy?\"",
-      "\"I think chef's special is good, so I want.\"",
-      "\"Do you have something else more special than this?\"",
-      "\"I want the chicken special with soup, please give me both.\""
+      "\"I think the chef's special is good. I want it now for me, please.\"",
+      "\"Do you have something more special than this on the menu today?\"",
+      "\"I want the chicken special with the soup, please bring me both of them.\""
     ],
     correct: 0,
-    explanation: "Option A is polite, makes a clear order, and asks a relevant clarifying question. B is grammatically incomplete ('I want' has no object). C is impolite and vague. D is grammatically awkward and abrupt."
+    explanation: "Option A is polite, places a clear order, and asks a useful clarifying question. Option B sounds demanding ('I want it now for me'). Option C uses 'more special than this' awkwardly — 'more special' isn't standard for describing a dish. Option D orders two main dishes at once and uses the command tone 'bring me both'."
   },
   {
     id: 6,
@@ -98,26 +98,26 @@ module.exports = [
     skill: "Speaking — polite correction",
     text: "You ordered a steak, but the waiter brings you chicken instead. What is the most appropriate response?",
     options: [
-      "\"This is not steak. I need my order fixed now.\"",
+      "\"This is not the steak that I ordered. I need my order fixed right now.\"",
       "\"Excuse me. I ordered steak, but this is chicken. Can it be changed, please?\"",
-      "\"I'm sorry, but I don't want chicken. Where's my steak?\"",
-      "\"This food is wrong, you should know better.\""
+      "\"I'm sorry, but I really don't want this chicken today. Where is my steak?\"",
+      "\"This food is the wrong one. You should know better than to bring it here.\""
     ],
     correct: 1,
-    explanation: "Option B is polite, clearly identifies the problem, and politely requests a correction. The others are rude or accusatory."
+    explanation: "Option B is polite, identifies the problem, and asks for a fix using a polite passive ('Can it be changed?'). Option A demands 'right now' — too aggressive. Option C focuses on what the customer doesn't want and ends with a demanding 'Where IS my steak?'. Option D blames the waiter ('you should know better')."
   },
   {
     id: 9,
     skill: "Speaking — polite questions",
     text: "You want to order a vegetarian dish but are unsure what the options are. What is the most effective way to ask the waiter for information?",
     options: [
-      "\"What is vegetarian in your menu? Is there anything?\"",
-      "\"I want something vegetarian. Tell me what's there.\"",
-      "\"What can I eat here that's vegetarian? I need to know.\"",
+      "\"What is vegetarian on your menu today? Is there anything I can order?\"",
+      "\"I want something vegetarian to eat. Tell me what is there on the menu.\"",
+      "\"What can I eat here that is vegetarian? Please tell me now.\"",
       "\"Excuse me, could you please tell me what vegetarian options you have?\""
     ],
     correct: 3,
-    explanation: "Option D is the most polite and grammatically correct. 'Could you please tell me…' is a standard indirect, courteous question. The others are too direct or awkwardly phrased."
+    explanation: "Option D is an indirect, polite question — the most courteous form. Option A uses 'What is vegetarian on your menu' awkwardly (it should be 'what vegetarian dishes/options'). Option B starts with 'I want' and follows with the command 'Tell me'. Option C demands 'Please tell me now', which sounds impatient."
   },
   {
     id: 10,
@@ -137,9 +137,9 @@ module.exports = [
     skill: "Speaking — clarity and coherence",
     text: "You are giving a presentation about your favorite book. Which sentence best demonstrates clarity and coherence?",
     options: [
-      "\"It's a nice book about something magical, and I read it because it's fun.\"",
-      "\"There's a book I like, you know, about, like, magic and stuff, so yeah.\"",
-      "\"I like the book, and it's really good, so I want to tell you about it now.\"",
+      "\"It's a nice book about something magical, and I read it because it's really fun to read.\"",
+      "\"There's a book I like a lot, you know, about, like, magic and stuff, so yeah, that one.\"",
+      "\"I like the book, and it's really good, so I want to tell everyone about it right now today.\"",
       "\"My favorite book is about a young wizard. It's full of adventures and magic, which I find exciting.\""
     ],
     correct: 3,
@@ -151,12 +151,12 @@ module.exports = [
     text: "You are calling a plumber because a pipe in your house is leaking. What is the most effective way to describe the problem?",
     options: [
       "\"Hello, there's a pipe in my kitchen leaking a lot of water. Can you come fix it?\"",
-      "\"The kitchen is very wet because the pipe broke. Help me now.\"",
-      "\"There's a leak, and I don't know what to do. Come here.\"",
-      "\"There's water in my house. I need help quickly.\""
+      "\"The kitchen is very wet because the pipe is broken. Please help me now to fix it.\"",
+      "\"There is a leak somewhere in my house, and I don't know what to do. Come here.\"",
+      "\"There is some water in my house from a problem somewhere. I need help quickly today.\""
     ],
     correct: 0,
-    explanation: "Option A specifies what is wrong (pipe leaking water), where (in the kitchen), and politely requests action. Specific + polite = effective service call."
+    explanation: "Option A specifies what is wrong (pipe leaking water), where (in the kitchen), and politely requests action. Option B sounds demanding ('help me now') and assumes a fix the caller cannot diagnose. Option C uses 'somewhere' — vague location — and ends with the command 'Come here'. Option D is even vaguer ('from a problem somewhere'), giving the plumber nothing useful to plan with."
   },
   {
     id: 13,
