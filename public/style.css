@@ -46,6 +46,13 @@ form label { display: block; margin: 10px 0; }
 .level-option small { color: var(--muted); }
 .level-option input:checked + span strong { color: var(--brand); }
 .level-option:has(input:checked) { border-color: var(--brand); background: #eef4fc; }
+
+.count-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.count-option { flex: 1 1 80px; display: flex; align-items: center; justify-content: center; padding: 10px 8px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: background .15s, border-color .15s; }
+.count-option:hover { background: #f7faff; border-color: #b9c4d6; }
+.count-option input { position: absolute; opacity: 0; pointer-events: none; }
+.count-option span { font-weight: 600; }
+.count-option:has(input:checked) { border-color: var(--brand); background: #eef4fc; color: var(--brand); }
 input[type="text"] {
   width: 100%; padding: 10px 12px; margin-top: 4px;
   border: 1px solid var(--border); border-radius: 8px; font: inherit;

@@ -90,7 +90,7 @@
       const total = stats.perItem.length;
       document.getElementById("summary").innerHTML = `
         <p><strong>${stats.totalAttempts}</strong> attempt(s) submitted for <strong>${level}</strong>.</p>
-        <p>Average score: <strong>${stats.averageScore}</strong> / ${total}</p>
+        <p>Average score: <strong>${stats.averageScore}</strong> (out of varying totals — students may take partial quizzes)</p>
       `;
 
       const per = document.getElementById("per-item");

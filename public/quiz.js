@@ -9,8 +9,9 @@
     startedAt: 0,
   };
 
-  async function loadQuestions(level) {
-    const res = await fetch(`/api/questions?level=${encodeURIComponent(level)}`);
+  async function loadQuestions(level, count) {
+    const url = `/api/questions?level=${encodeURIComponent(level)}` + (count ? `&count=${count}` : "");
+    const res = await fetch(url);
     if (!res.ok) throw new Error("load failed");
     state.questions = await res.json();
     state.answers = new Array(state.questions.length).fill(null);
@@ -37,12 +38,14 @@
   $("start-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const levelEl = document.querySelector('input[name="level"]:checked');
+    const countEl = document.querySelector('input[name="count"]:checked');
     state.level = levelEl ? levelEl.value : null;
+    state.count = countEl ? Number.parseInt(countEl.value, 10) : 20;
     state.student.name = $("student-name").value.trim();
     state.student.id = $("student-id").value.trim();
     if (!state.level || !state.student.name || !state.student.id) return;
     try {
-      await loadQuestions(state.level);
+      await loadQuestions(state.level, state.count);
     } catch {
       alert("Could not load the quiz. Please reload the page.");
       return;
@@ -150,6 +153,7 @@
           level: state.level,
           studentName: state.student.name,
           studentId: state.student.id,
+          questionIds: state.questions.map(q => q.id),
           answers: state.answers,
           durationSeconds,
         }),

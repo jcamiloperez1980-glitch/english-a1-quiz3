@@ -36,11 +36,26 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/api/quizzes", (_req, res) => res.json(listQuizzes()));
 
-// Public quiz payload — no correct answers leaked
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Public quiz payload — no correct answers leaked.
+// Optional ?count=N samples N random questions from the bank (preserving original numbering via id).
 app.get("/api/questions", (req, res) => {
   const bank = getBank(req.query.level);
   if (!bank) return res.status(400).json({ error: "Invalid or missing level." });
-  res.json(bank.map(q => ({
+  let subset = bank;
+  const requested = Number.parseInt(req.query.count, 10);
+  if (Number.isFinite(requested) && requested > 0 && requested < bank.length) {
+    subset = shuffle(bank).slice(0, requested);
+  }
+  res.json(subset.map(q => ({
     id: q.id, skill: q.skill, text: q.text, options: q.options, multi: q.multi
   })));
 });
@@ -52,15 +67,34 @@ function setsEqual(a, b) {
   return true;
 }
 
-app.post("/api/submit", (req, res) => {
-  const { level, studentName, studentId, answers, durationSeconds } = req.body || {};
-  const bank = getBank(level);
-  if (!bank) return res.status(400).json({ error: "Invalid or missing level. Use A1 or A2." });
-  if (!studentName || !studentId || !Array.isArray(answers)) {
-    return res.status(400).json({ error: "Missing studentName, studentId, or answers" });
+// Build a {qid -> chosen} object from either legacy (array, full-bank) or new (object) payloads.
+function answersToMap(parsed, bank) {
+  if (Array.isArray(parsed)) {
+    const map = {};
+    bank.forEach((q, i) => { if (parsed[i] !== undefined) map[q.id] = parsed[i]; });
+    return map;
   }
-  const graded = bank.map((q, i) => {
-    // Client sends either a single index (radio) or an array (checkboxes).
+  if (parsed && typeof parsed === "object" && parsed.answers && parsed.questionIds) {
+    const map = {};
+    parsed.questionIds.forEach((qid, i) => { map[qid] = parsed.answers[i]; });
+    return map;
+  }
+  if (parsed && typeof parsed === "object") return parsed;
+  return {};
+}
+
+app.post("/api/submit", (req, res) => {
+  const { level, studentName, studentId, questionIds, answers, durationSeconds } = req.body || {};
+  const bank = getBank(level);
+  if (!bank) return res.status(400).json({ error: "Invalid or missing level." });
+  if (!studentName || !studentId || !Array.isArray(answers) || !Array.isArray(questionIds)
+      || questionIds.length !== answers.length) {
+    return res.status(400).json({ error: "Missing or mismatched studentName, studentId, questionIds, or answers" });
+  }
+  const byId = new Map(bank.map(q => [q.id, q]));
+  const graded = questionIds.map((qid, i) => {
+    const q = byId.get(qid);
+    if (!q) return null;
     const raw = answers[i];
     const chosenArr = Array.isArray(raw)
       ? raw.filter(Number.isInteger)
@@ -77,9 +111,11 @@ app.post("/api/submit", (req, res) => {
       isCorrect,
       explanation: q.explanation
     };
-  });
+  }).filter(Boolean);
+
   const score = graded.filter(g => g.isCorrect).length;
-  const total = bank.length;
+  const total = graded.length;
+  const payload = { questionIds, answers };
 
   db.prepare(
     `INSERT INTO attempts (level, student_name, student_id, score, total, answers_json, duration_seconds)
@@ -90,7 +126,7 @@ app.post("/api/submit", (req, res) => {
     String(studentId).slice(0, 60),
     score,
     total,
-    JSON.stringify(answers),
+    JSON.stringify(payload),
     Number.isFinite(durationSeconds) ? Math.round(durationSeconds) : null
   );
 
@@ -133,9 +169,11 @@ app.get("/api/admin/stats", requireAdmin, (req, res) => {
   const rows = db.prepare(`SELECT score, total, answers_json FROM attempts WHERE level = ?`).all(level);
   const perItem = bank.map(q => ({ id: q.id, skill: q.skill, correct: 0, attempts: 0 }));
   for (const r of rows) {
-    const ans = JSON.parse(r.answers_json);
+    const parsed = JSON.parse(r.answers_json);
+    const map = answersToMap(parsed, bank);
     bank.forEach((q, i) => {
-      const raw = ans[i];
+      if (!(q.id in map)) return;
+      const raw = map[q.id];
       const chosenArr = Array.isArray(raw)
         ? raw.filter(Number.isInteger)
         : Number.isInteger(raw) ? [raw] : null;
