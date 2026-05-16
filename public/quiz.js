@@ -1,6 +1,7 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   const state = {
+    level: null,
     questions: [],
     answers: [],
     current: 0,
@@ -8,19 +9,22 @@
     startedAt: 0,
   };
 
-  async function loadQuestions() {
-    const res = await fetch("/api/questions");
+  async function loadQuestions(level) {
+    const res = await fetch(`/api/questions?level=${encodeURIComponent(level)}`);
+    if (!res.ok) throw new Error("load failed");
     state.questions = await res.json();
     state.answers = new Array(state.questions.length).fill(null);
   }
 
   $("start-form").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const levelEl = document.querySelector('input[name="level"]:checked');
+    state.level = levelEl ? levelEl.value : null;
     state.student.name = $("student-name").value.trim();
     state.student.id = $("student-id").value.trim();
-    if (!state.student.name || !state.student.id) return;
+    if (!state.level || !state.student.name || !state.student.id) return;
     try {
-      await loadQuestions();
+      await loadQuestions(state.level);
     } catch {
       alert("Could not load the quiz. Please reload the page.");
       return;
@@ -99,6 +103,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          level: state.level,
           studentName: state.student.name,
           studentId: state.student.id,
           answers: state.answers,

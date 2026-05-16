@@ -36,6 +36,16 @@ body {
 h2 { margin-top: 0; }
 .tips { color: var(--muted); padding-left: 18px; }
 form label { display: block; margin: 10px 0; }
+
+.level-picker { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px 14px; margin: 0 0 14px; }
+.level-picker legend { padding: 0 6px; color: var(--muted); font-size: .9rem; }
+.level-option { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; margin: 6px 0; transition: background .15s, border-color .15s; }
+.level-option:hover { background: #f7faff; border-color: #b9c4d6; }
+.level-option input { accent-color: var(--brand); }
+.level-option span { display: flex; flex-direction: column; }
+.level-option small { color: var(--muted); }
+.level-option input:checked + span strong { color: var(--brand); }
+.level-option:has(input:checked) { border-color: var(--brand); background: #eef4fc; }
 input[type="text"] {
   width: 100%; padding: 10px 12px; margin-top: 4px;
   border: 1px solid var(--border); border-radius: 8px; font: inherit;

@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
 const Database = require("better-sqlite3");
-const questions = require("./questions");
+const { getBank } = require("./questions");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +13,7 @@ const db = new Database(DB_PATH);
 db.exec(`
   CREATE TABLE IF NOT EXISTS attempts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    level TEXT NOT NULL DEFAULT 'A1',
     student_name TEXT NOT NULL,
     student_id TEXT NOT NULL,
     score INTEGER NOT NULL,
@@ -22,21 +23,32 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   );
 `);
+// Migration: add `level` column if upgrading from a previous DB.
+try {
+  const cols = db.prepare("PRAGMA table_info(attempts)").all().map(c => c.name);
+  if (!cols.includes("level")) {
+    db.exec("ALTER TABLE attempts ADD COLUMN level TEXT NOT NULL DEFAULT 'A1'");
+  }
+} catch (_) {}
 
 app.use(express.json({ limit: "200kb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Public quiz payload (no correct answers leaked)
-app.get("/api/questions", (_req, res) => {
-  res.json(questions.map(q => ({ id: q.id, skill: q.skill, text: q.text, options: q.options })));
+// Public quiz payload — no correct answers leaked
+app.get("/api/questions", (req, res) => {
+  const bank = getBank(req.query.level);
+  if (!bank) return res.status(400).json({ error: "Invalid or missing level. Use A1 or A2." });
+  res.json(bank.map(q => ({ id: q.id, skill: q.skill, text: q.text, options: q.options })));
 });
 
 app.post("/api/submit", (req, res) => {
-  const { studentName, studentId, answers, durationSeconds } = req.body || {};
+  const { level, studentName, studentId, answers, durationSeconds } = req.body || {};
+  const bank = getBank(level);
+  if (!bank) return res.status(400).json({ error: "Invalid or missing level. Use A1 or A2." });
   if (!studentName || !studentId || !Array.isArray(answers)) {
     return res.status(400).json({ error: "Missing studentName, studentId, or answers" });
   }
-  const graded = questions.map((q, i) => {
+  const graded = bank.map((q, i) => {
     const chosen = Number.isInteger(answers[i]) ? answers[i] : null;
     const correct = chosen === q.correct;
     return {
@@ -51,12 +63,13 @@ app.post("/api/submit", (req, res) => {
     };
   });
   const score = graded.filter(g => g.isCorrect).length;
-  const total = questions.length;
+  const total = bank.length;
 
   db.prepare(
-    `INSERT INTO attempts (student_name, student_id, score, total, answers_json, duration_seconds)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO attempts (level, student_name, student_id, score, total, answers_json, duration_seconds)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
   ).run(
+    String(level).toUpperCase(),
     String(studentName).slice(0, 120),
     String(studentId).slice(0, 60),
     score,
@@ -68,7 +81,6 @@ app.post("/api/submit", (req, res) => {
   res.json({ score, total, graded });
 });
 
-// Basic-auth admin
 function requireAdmin(req, res, next) {
   const header = req.headers.authorization || "";
   const [scheme, encoded] = header.split(" ");
@@ -83,20 +95,30 @@ app.get("/admin", requireAdmin, (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
-app.get("/api/admin/attempts", requireAdmin, (_req, res) => {
-  const rows = db.prepare(
-    `SELECT id, student_name, student_id, score, total, duration_seconds, created_at, answers_json
-     FROM attempts ORDER BY created_at DESC`
-  ).all();
+app.get("/api/admin/attempts", requireAdmin, (req, res) => {
+  const level = req.query.level ? String(req.query.level).toUpperCase() : null;
+  const rows = (level
+    ? db.prepare(
+        `SELECT id, level, student_name, student_id, score, total, duration_seconds, created_at, answers_json
+         FROM attempts WHERE level = ? ORDER BY created_at DESC`
+      ).all(level)
+    : db.prepare(
+        `SELECT id, level, student_name, student_id, score, total, duration_seconds, created_at, answers_json
+         FROM attempts ORDER BY created_at DESC`
+      ).all()
+  );
   res.json(rows.map(r => ({ ...r, answers: JSON.parse(r.answers_json), answers_json: undefined })));
 });
 
-app.get("/api/admin/stats", requireAdmin, (_req, res) => {
-  const rows = db.prepare(`SELECT score, total, answers_json FROM attempts`).all();
-  const perItem = questions.map(q => ({ id: q.id, skill: q.skill, correct: 0, attempts: 0 }));
+app.get("/api/admin/stats", requireAdmin, (req, res) => {
+  const level = req.query.level ? String(req.query.level).toUpperCase() : "A1";
+  const bank = getBank(level);
+  if (!bank) return res.status(400).json({ error: "Invalid level" });
+  const rows = db.prepare(`SELECT score, total, answers_json FROM attempts WHERE level = ?`).all(level);
+  const perItem = bank.map(q => ({ id: q.id, skill: q.skill, correct: 0, attempts: 0 }));
   for (const r of rows) {
     const ans = JSON.parse(r.answers_json);
-    questions.forEach((q, i) => {
+    bank.forEach((q, i) => {
       if (Number.isInteger(ans[i])) {
         perItem[i].attempts += 1;
         if (ans[i] === q.correct) perItem[i].correct += 1;
@@ -104,7 +126,7 @@ app.get("/api/admin/stats", requireAdmin, (_req, res) => {
     });
   }
   const avg = rows.length ? rows.reduce((s, r) => s + r.score, 0) / rows.length : 0;
-  res.json({ totalAttempts: rows.length, averageScore: Number(avg.toFixed(2)), perItem });
+  res.json({ level, totalAttempts: rows.length, averageScore: Number(avg.toFixed(2)), perItem });
 });
 
 app.listen(PORT, () => console.log(`Quiz app listening on port ${PORT}`));

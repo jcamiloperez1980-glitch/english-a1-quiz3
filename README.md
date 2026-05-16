@@ -1,6 +1,6 @@
 # English A1 — Unit 3 Practice Quiz
 
-A small web app where students practice the Unit 3 quiz (20 multiple-choice items). After submitting, students see their score and an explanation for every question. The teacher can review every attempt through a password-protected admin page.
+A small web app where students practice the Unit 3 quiz (20 multiple-choice items). Students pick their level — **A1** or **A2** — and get a different question bank tailored to that level. After submitting, students see their score and an explanation for every question. The teacher can review every attempt (filtered by level) through a password-protected admin page.
 
 ## Features
 - 20 questions covering speaking strategies, reading comprehension, listening, and grammar.
@@ -68,4 +68,4 @@ railway up
 
 ## Editing the quiz
 
-All questions, options, correct answers, and explanations live in [`questions.js`](./questions.js). Edit that file and redeploy — no other code changes needed.
+All questions, options, correct answers, and explanations live in [`questions/a1.js`](./questions/a1.js) (English A1) and [`questions/a2.js`](./questions/a2.js) (English A2). Edit those files and redeploy — no other code changes needed.

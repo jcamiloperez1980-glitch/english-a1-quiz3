@@ -14,17 +14,28 @@
     .bar > div { height: 100%; background: var(--brand); }
     .grid { display: grid; gap: 10px; }
     .pill { font-size: .8rem; padding: 2px 8px; border-radius: 999px; background: #eef4fc; color: var(--brand); }
+    .level-tag { font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+    .level-tag.A1 { background: #e7f6ec; color: var(--good); }
+    .level-tag.A2 { background: #fff4e0; color: #8a5300; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .tab { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: #fff; cursor: pointer; }
+    .tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
   </style>
 </head>
 <body>
   <main class="container">
     <header class="hero">
       <h1>Quiz attempts</h1>
-      <p class="subtitle">English A1 · Unit 3 practice</p>
+      <p class="subtitle">Unit 3 practice — English A1 & A2</p>
     </header>
 
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-level="A1">English A1</button>
+      <button class="tab" data-level="A2">English A2</button>
+    </div>
+
     <section class="card">
-      <h2>Summary</h2>
+      <h2>Summary <span id="current-level-tag" class="level-tag A1">A1</span></h2>
       <div id="summary">Loading…</div>
     </section>
 
@@ -38,7 +49,7 @@
       <div style="overflow:auto">
         <table>
           <thead>
-            <tr><th>When</th><th>Name</th><th>ID</th><th>Score</th><th>Time</th></tr>
+            <tr><th>When</th><th>Level</th><th>Name</th><th>ID</th><th>Score</th><th>Time</th></tr>
           </thead>
           <tbody id="attempts-body"></tbody>
         </table>
@@ -46,43 +57,63 @@
     </section>
   </main>
   <script>
-    async function load() {
+    let currentLevel = "A1";
+
+    async function load(level) {
+      currentLevel = level;
+      document.querySelectorAll("#tabs .tab").forEach(b => {
+        b.classList.toggle("active", b.dataset.level === level);
+      });
+      const tag = document.getElementById("current-level-tag");
+      tag.className = "level-tag " + level;
+      tag.textContent = level;
+
       const [stats, attempts] = await Promise.all([
-        fetch("/api/admin/stats").then(r => r.json()),
-        fetch("/api/admin/attempts").then(r => r.json()),
+        fetch(`/api/admin/stats?level=${level}`).then(r => r.json()),
+        fetch(`/api/admin/attempts?level=${level}`).then(r => r.json()),
       ]);
+
       document.getElementById("summary").innerHTML = `
-        <p><strong>${stats.totalAttempts}</strong> attempt(s) submitted.</p>
+        <p><strong>${stats.totalAttempts}</strong> attempt(s) submitted for <strong>${level}</strong>.</p>
         <p>Average score: <strong>${stats.averageScore}</strong> / 20</p>
       `;
+
       const per = document.getElementById("per-item");
       per.innerHTML = stats.perItem.map((it, i) => {
         const pct = it.attempts ? Math.round((it.correct / it.attempts) * 100) : 0;
         return `
           <div>
             <div style="display:flex;justify-content:space-between;gap:8px;">
-              <span><strong>Q${i+1}</strong> <span class="pill">${it.skill}</span></span>
+              <span><strong>Q${i+1}</strong> <span class="pill">${escapeHtml(it.skill)}</span></span>
               <span>${it.correct}/${it.attempts} correct · ${pct}%</span>
             </div>
             <div class="bar"><div style="width:${pct}%"></div></div>
           </div>
         `;
       }).join("");
+
       const body = document.getElementById("attempts-body");
       body.innerHTML = attempts.map(a => `
         <tr>
           <td>${a.created_at}</td>
+          <td><span class="level-tag ${a.level}">${a.level}</span></td>
           <td>${escapeHtml(a.student_name)}</td>
           <td>${escapeHtml(a.student_id)}</td>
           <td>${a.score} / ${a.total}</td>
           <td>${a.duration_seconds ? a.duration_seconds + "s" : "—"}</td>
         </tr>
-      `).join("") || `<tr><td colspan="5" style="text-align:center;color:var(--muted);">No attempts yet.</td></tr>`;
+      `).join("") || `<tr><td colspan="6" style="text-align:center;color:var(--muted);">No attempts yet.</td></tr>`;
     }
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
     }
-    load();
+
+    document.getElementById("tabs").addEventListener("click", (e) => {
+      const btn = e.target.closest(".tab");
+      if (btn) load(btn.dataset.level);
+    });
+
+    load("A1");
   </script>
 </body>
 </html>
