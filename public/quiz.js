@@ -16,6 +16,24 @@
     state.answers = new Array(state.questions.length).fill(null);
   }
 
+  async function loadQuizList() {
+    try {
+      const res = await fetch("/api/quizzes");
+      const quizzes = await res.json();
+      const wrap = $("quiz-options");
+      wrap.classList.remove("quiz-options-loading");
+      wrap.innerHTML = quizzes.map(q => `
+        <label class="level-option">
+          <input type="radio" name="level" value="${q.id}" required />
+          <span><strong>${q.label}</strong><small>${q.description}</small></span>
+        </label>
+      `).join("");
+    } catch {
+      $("quiz-options").textContent = "Could not load quizzes. Please reload the page.";
+    }
+  }
+  loadQuizList();
+
   $("start-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const levelEl = document.querySelector('input[name="level"]:checked');
@@ -35,6 +53,11 @@
     render();
   });
 
+  function isAnswered(answer, multi) {
+    if (multi) return Array.isArray(answer) && answer.length > 0;
+    return Number.isInteger(answer);
+  }
+
   function render() {
     const q = state.questions[state.current];
     const total = state.questions.length;
@@ -50,6 +73,13 @@
     skill.textContent = q.skill;
     container.appendChild(skill);
 
+    if (q.multi) {
+      const tag = document.createElement("span");
+      tag.className = "q-multi";
+      tag.textContent = "Select ALL correct answers";
+      container.appendChild(tag);
+    }
+
     const text = document.createElement("p");
     text.className = "q-text";
     text.textContent = q.text;
@@ -59,14 +89,28 @@
     opts.className = "options";
     q.options.forEach((opt, i) => {
       const label = document.createElement("label");
-      label.className = "option" + (selected === i ? " selected" : "");
+      const isSelected = q.multi
+        ? Array.isArray(selected) && selected.includes(i)
+        : selected === i;
+      label.className = "option" + (isSelected ? " selected" : "");
       const input = document.createElement("input");
-      input.type = "radio";
+      input.type = q.multi ? "checkbox" : "radio";
       input.name = `q${q.id}`;
       input.value = i;
-      input.checked = selected === i;
+      input.checked = isSelected;
       input.addEventListener("change", () => {
-        state.answers[state.current] = i;
+        if (q.multi) {
+          const cur = Array.isArray(state.answers[state.current])
+            ? state.answers[state.current].slice()
+            : [];
+          const idx = cur.indexOf(i);
+          if (input.checked && idx === -1) cur.push(i);
+          else if (!input.checked && idx !== -1) cur.splice(idx, 1);
+          cur.sort();
+          state.answers[state.current] = cur;
+        } else {
+          state.answers[state.current] = i;
+        }
         render();
       });
       const span = document.createElement("span");
@@ -91,7 +135,7 @@
   });
 
   $("submit-btn").addEventListener("click", async () => {
-    const unanswered = state.answers.findIndex((a) => a === null);
+    const unanswered = state.answers.findIndex((a, i) => !isAnswered(a, state.questions[i].multi));
     if (unanswered !== -1) {
       const ok = confirm(`Question ${unanswered + 1} is unanswered. Submit anyway?`);
       if (!ok) { state.current = unanswered; render(); return; }
@@ -137,22 +181,28 @@
 
     const wrap = $("breakdown");
     wrap.innerHTML = "";
+    const fmt = (indices, texts) => {
+      if (!indices || indices.length === 0) return "(no answer)";
+      return indices.map((ix, n) => `${"abcd"[ix]}) ${texts[n]}`).join("  ·  ");
+    };
     graded.forEach((g, i) => {
       const q = state.questions[i];
       const div = document.createElement("div");
       div.className = "review-item " + (g.isCorrect ? "correct" : "incorrect");
-      const chosenLetter = g.chosen != null ? "abcd"[g.chosen] : "—";
-      const correctLetter = "abcd"[g.correctIndex];
       div.innerHTML = `
-        <div class="verdict">${i + 1}. ${g.isCorrect ? "✓ Correct" : "✗ Incorrect"} <span class="q-skill">${g.skill}</span></div>
+        <div class="verdict">${i + 1}. ${g.isCorrect ? "✓ Correct" : "✗ Incorrect"} <span class="q-skill">${g.skill}</span>${g.multi ? ' <span class="q-multi">multi</span>' : ""}</div>
         <div class="row"><strong>Question:</strong> <span></span></div>
-        <div class="row"><strong>Your answer:</strong> ${chosenLetter}) ${g.chosenText ?? "(no answer)"}</div>
-        <div class="row"><strong>Correct answer:</strong> ${correctLetter}) ${g.correctText}</div>
-        <div class="explanation"><strong>Why:</strong> ${g.explanation}</div>
+        <div class="row"><strong>Your answer:</strong> ${escapeHtml(fmt(g.chosen, g.chosenTexts))}</div>
+        <div class="row"><strong>Correct answer:</strong> ${escapeHtml(fmt(g.correctIndices, g.correctTexts))}</div>
+        <div class="explanation"><strong>Why:</strong> ${escapeHtml(g.explanation)}</div>
       `;
       div.querySelector(".row span").textContent = q.text;
       wrap.appendChild(div);
     });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   }
 
   $("retry-btn").addEventListener("click", () => location.reload());

@@ -15,8 +15,10 @@
     .grid { display: grid; gap: 10px; }
     .pill { font-size: .8rem; padding: 2px 8px; border-radius: 999px; background: #eef4fc; color: var(--brand); }
     .level-tag { font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+    .level-tag { background: #eef4fc; color: var(--brand); }
     .level-tag.A1 { background: #e7f6ec; color: var(--good); }
     .level-tag.A2 { background: #fff4e0; color: #8a5300; }
+    .level-tag.METHODS_U2 { background: #f3e8ff; color: #6b21a8; }
     .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
     .tab { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: #fff; cursor: pointer; }
     .tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
@@ -29,13 +31,10 @@
       <p class="subtitle">Unit 3 practice — English A1 & A2</p>
     </header>
 
-    <div class="tabs" id="tabs">
-      <button class="tab active" data-level="A1">English A1</button>
-      <button class="tab" data-level="A2">English A2</button>
-    </div>
+    <div class="tabs" id="tabs">Loading quizzes…</div>
 
     <section class="card">
-      <h2>Summary <span id="current-level-tag" class="level-tag A1">A1</span></h2>
+      <h2>Summary <span id="current-level-tag" class="level-tag">—</span></h2>
       <div id="summary">Loading…</div>
     </section>
 
@@ -57,7 +56,22 @@
     </section>
   </main>
   <script>
-    let currentLevel = "A1";
+    let currentLevel = null;
+    let quizzes = [];
+
+    async function init() {
+      try {
+        quizzes = await fetch("/api/quizzes").then(r => r.json());
+      } catch {
+        document.getElementById("tabs").textContent = "Could not load quiz list.";
+        return;
+      }
+      const tabs = document.getElementById("tabs");
+      tabs.innerHTML = quizzes.map((q, i) =>
+        `<button class="tab${i === 0 ? " active" : ""}" data-level="${q.id}">${q.label}</button>`
+      ).join("");
+      load(quizzes[0].id);
+    }
 
     async function load(level) {
       currentLevel = level;
@@ -69,13 +83,14 @@
       tag.textContent = level;
 
       const [stats, attempts] = await Promise.all([
-        fetch(`/api/admin/stats?level=${level}`).then(r => r.json()),
-        fetch(`/api/admin/attempts?level=${level}`).then(r => r.json()),
+        fetch(`/api/admin/stats?level=${encodeURIComponent(level)}`).then(r => r.json()),
+        fetch(`/api/admin/attempts?level=${encodeURIComponent(level)}`).then(r => r.json()),
       ]);
 
+      const total = stats.perItem.length;
       document.getElementById("summary").innerHTML = `
         <p><strong>${stats.totalAttempts}</strong> attempt(s) submitted for <strong>${level}</strong>.</p>
-        <p>Average score: <strong>${stats.averageScore}</strong> / 20</p>
+        <p>Average score: <strong>${stats.averageScore}</strong> / ${total}</p>
       `;
 
       const per = document.getElementById("per-item");
@@ -113,7 +128,7 @@
       if (btn) load(btn.dataset.level);
     });
 
-    load("A1");
+    init();
   </script>
 </body>
 </html>

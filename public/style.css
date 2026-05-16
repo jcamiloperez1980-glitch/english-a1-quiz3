@@ -64,7 +64,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 #progress-bar { height: 100%; width: 0%; background: var(--brand); transition: width .25s ease; }
 .progress-text { font-size: .85rem; color: var(--muted); margin-bottom: 14px; }
 
-.q-skill { display: inline-block; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--brand); background: #e9f0fa; padding: 3px 8px; border-radius: 999px; margin-bottom: 8px;}
+.q-skill { display: inline-block; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--brand); background: #e9f0fa; padding: 3px 8px; border-radius: 999px; margin: 0 6px 8px 0;}
+.q-multi { display: inline-block; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #8a5300; background: #fff4e0; padding: 3px 8px; border-radius: 999px; margin: 0 0 8px;}
 .q-text { white-space: pre-wrap; margin: 0 0 14px; }
 .options { display: grid; gap: 8px; }
 .option {

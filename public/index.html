@@ -9,8 +9,8 @@
 <body>
   <main class="container">
     <header class="hero">
-      <h1>English — Unit 3 Practice Quiz</h1>
-      <p class="subtitle">20 questions · ~20 minutes · choose your level (A1 or A2)</p>
+      <h1>UNIMINUTO — Practice Quizzes</h1>
+      <p class="subtitle">20 questions · choose your course/quiz below</p>
     </header>
 
     <section id="start-screen" class="card">
@@ -21,16 +21,9 @@
         <li>You will see feedback and explanations at the end.</li>
       </ul>
       <form id="start-form">
-        <fieldset class="level-picker">
+        <fieldset class="level-picker" id="quiz-picker">
           <legend>I am taking…</legend>
-          <label class="level-option">
-            <input type="radio" name="level" value="A1" required />
-            <span><strong>English A1</strong><small>Unit 3 — beginner</small></span>
-          </label>
-          <label class="level-option">
-            <input type="radio" name="level" value="A2" required />
-            <span><strong>English A2</strong><small>Unit 3 — elementary</small></span>
-          </label>
+          <div id="quiz-options" class="quiz-options-loading">Loading quizzes…</div>
         </fieldset>
         <label>Full name
           <input type="text" id="student-name" required minlength="2" maxlength="120" autocomplete="name" />

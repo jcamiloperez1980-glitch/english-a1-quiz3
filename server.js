@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
 const Database = require("better-sqlite3");
-const { getBank } = require("./questions");
+const { getBank, listQuizzes } = require("./questions");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,12 +34,23 @@ try {
 app.use(express.json({ limit: "200kb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
+app.get("/api/quizzes", (_req, res) => res.json(listQuizzes()));
+
 // Public quiz payload — no correct answers leaked
 app.get("/api/questions", (req, res) => {
   const bank = getBank(req.query.level);
-  if (!bank) return res.status(400).json({ error: "Invalid or missing level. Use A1 or A2." });
-  res.json(bank.map(q => ({ id: q.id, skill: q.skill, text: q.text, options: q.options })));
+  if (!bank) return res.status(400).json({ error: "Invalid or missing level." });
+  res.json(bank.map(q => ({
+    id: q.id, skill: q.skill, text: q.text, options: q.options, multi: q.multi
+  })));
 });
+
+function setsEqual(a, b) {
+  if (a.length !== b.length) return false;
+  const sa = new Set(a);
+  for (const x of b) if (!sa.has(x)) return false;
+  return true;
+}
 
 app.post("/api/submit", (req, res) => {
   const { level, studentName, studentId, answers, durationSeconds } = req.body || {};
@@ -49,16 +60,21 @@ app.post("/api/submit", (req, res) => {
     return res.status(400).json({ error: "Missing studentName, studentId, or answers" });
   }
   const graded = bank.map((q, i) => {
-    const chosen = Number.isInteger(answers[i]) ? answers[i] : null;
-    const correct = chosen === q.correct;
+    // Client sends either a single index (radio) or an array (checkboxes).
+    const raw = answers[i];
+    const chosenArr = Array.isArray(raw)
+      ? raw.filter(Number.isInteger)
+      : Number.isInteger(raw) ? [raw] : [];
+    const isCorrect = setsEqual(chosenArr, q.correct);
     return {
       id: q.id,
       skill: q.skill,
-      chosen,
-      correctIndex: q.correct,
-      correctText: q.options[q.correct],
-      chosenText: chosen != null ? q.options[chosen] : null,
-      isCorrect: correct,
+      multi: q.multi,
+      chosen: chosenArr,
+      correctIndices: q.correct,
+      correctTexts: q.correct.map(ix => q.options[ix]),
+      chosenTexts: chosenArr.map(ix => q.options[ix]),
+      isCorrect,
       explanation: q.explanation
     };
   });
@@ -119,10 +135,13 @@ app.get("/api/admin/stats", requireAdmin, (req, res) => {
   for (const r of rows) {
     const ans = JSON.parse(r.answers_json);
     bank.forEach((q, i) => {
-      if (Number.isInteger(ans[i])) {
-        perItem[i].attempts += 1;
-        if (ans[i] === q.correct) perItem[i].correct += 1;
-      }
+      const raw = ans[i];
+      const chosenArr = Array.isArray(raw)
+        ? raw.filter(Number.isInteger)
+        : Number.isInteger(raw) ? [raw] : null;
+      if (chosenArr === null || chosenArr.length === 0) return;
+      perItem[i].attempts += 1;
+      if (setsEqual(chosenArr, q.correct)) perItem[i].correct += 1;
     });
   }
   const avg = rows.length ? rows.reduce((s, r) => s + r.score, 0) / rows.length : 0;
