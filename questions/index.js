@@ -2,6 +2,7 @@ const a1 = require("./a1");
 const a2 = require("./a2");
 const methodsU2 = require("./methods_u2");
 const a1Final = require("./a1_final");
+const a2Final = require("./a2_final");
 
 // Normalise so every question has:
 //   correct: number[]   (set of correct option indices)
@@ -18,7 +19,8 @@ const banks = {
   A1: normalise(a1),
   A2: normalise(a2),
   METHODS_U2: normalise(methodsU2),
-  A1_FINAL: normalise(a1Final)
+  A1_FINAL: normalise(a1Final),
+  A2_FINAL: normalise(a2Final)
 };
 
 const meta = {
@@ -33,6 +35,11 @@ const meta = {
     id: "A1_FINAL",
     label: "English A1 — Final Exam Practice",
     description: "Beginner · 20 questions · greetings, grammar, interactions"
+  },
+  A2_FINAL: {
+    id: "A2_FINAL",
+    label: "English A2 — Final Exam Practice",
+    description: "Elementary · 20 questions · all three units"
   }
 };
 
